@@ -1,40 +1,65 @@
 import React, { Component } from 'react';
 // import R from 'ramda';
-// import api from './api';
+import api from './api'
+import Navigation from './Navigation';
+import NoteList from './NoteList';
+import NoteView from './NoteView';
 
 export default class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      something: false,
-      // sets some initial state
-    };
+      note: [],
+      notes: [],
+    }
 
-    this.doSomething = this.doSomething.bind(this);
+    this.addNote = this.addNote.bind(this);
+    this.updateNotes = this.updateNotes.bind(this);
+    this.getNote = this.getNote.bind(this);
+    this.updateNote = this.updateNote.bind(this);
+    this.updateNotes();
   }
 
-  componentDidMount() {
-    // when mount
+  addNote() {
+    api.notes.create({
+      title: 'New note',
+      body: 'Write your note here',
+      created_at: Date.now(),
+      status: 'Saving ...',
+    });
+
+    this.updateNotes();
   }
 
-  doSomething() {
-    // sets some new state
-    this.setState({ something: !this.state.something });
+  updateNotes() {
+    api.notes.all().then(notes => {
+      this.setState({notes: notes});
+    });
+  }
+
+  updateNote(event) {
+    let note = this.state.note;
+    note[event.target.name] = event.target.value;
+    this.setState({note: note});
+    api.notes.update(note.id, note).then(() => {
+      this.updateNotes();
+    });
+  }
+
+  getNote(id) {
+    return () => {
+      api.notes.get(id).then(note => {
+        this.setState({note: note})
+      });
+    }
   }
 
   render() {
-    const {
-      something,
-      // gets some vars from state
-    } = this.state;
-
     return (
-      <div>
-        <h1>
-          Hello Kevernote 2017
-        </h1>
-        <button onClick={this.doSomething}>Do something</button>
-        {something && <h2>I did something!</h2>}
+      <div className="app-container">
+        <Navigation addNote={this.addNote} />
+        <NoteList notes={this.state.notes} getNote={this.getNote} />
+        <NoteView note={this.state.note} updateNote={this.updateNote}/>
       </div>
     );
   }
